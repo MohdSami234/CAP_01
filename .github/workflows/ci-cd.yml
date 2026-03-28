@@ -28,13 +28,21 @@ jobs:
       - name: Build CAP + Fiori
         run: npm run build
 
-      # ✅ Install CF CLI (FIXED - stable)
+      # ✅ Install CF CLI (FINAL FIX)
       - name: Install Cloud Foundry CLI
         run: |
           set -e
 
           echo "Downloading CF CLI v8..."
-          curl -L https://github.com/cloudfoundry/cli/releases/latest/download/cf8-linux-amd64.tgz -o cf.tgz
+          curl -L --retry 5 --retry-delay 5 \
+          https://github.com/cloudfoundry/cli/releases/download/v8.7.10/cf8-linux-amd64.tgz \
+          -o cf.tgz
+
+          echo "Check file size:"
+          ls -lh cf.tgz
+
+          echo "Validating file type:"
+          file cf.tgz
 
           echo "Extracting..."
           tar -xzf cf.tgz
@@ -49,7 +57,7 @@ jobs:
           which cf
           cf version
 
-      # ✅ CF Login (non-interactive)
+      # ✅ CF Login
       - name: CF Login
         run: |
           cf api ${{ secrets.CF_API_URL }}
