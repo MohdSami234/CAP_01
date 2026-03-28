@@ -3,41 +3,43 @@ name: CAP + Fiori CI/CD
 on:
   push:
     branches:
-      - master   # ⚠️ change to master if your repo uses master
+      - master   # change to main if needed
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
+      # 1. Checkout
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Setup Node.js
-      - name: Setup Node.js
+      # 2. Node setup
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '22'
           cache: 'npm'
 
-      # 3. Install dependencies
+      # 3. Install deps
       - name: Install dependencies
         run: npm install
 
-      # 4. Build CAP + Fiori
-      - name: Build project
+      # 4. Build
+      - name: Build CAP + Fiori
         run: npm run build
 
-      # 5. Install Cloud Foundry CLI (BEST PRACTICE ✅)
-      - name: Setup CF CLI
-        uses: cloudfoundry/cf-cli-action@v2
+      # 5. Install CF CLI (FIXED ✅)
+      - name: Install Cloud Foundry CLI
+        run: |
+          curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github" -o cf.tgz
+          tar -xzf cf.tgz
+          chmod +x cf
+          sudo mv cf /usr/local/bin/cf
+          which cf
+          cf version
 
-      # 6. Verify CF CLI
-      - name: CF version
-        run: cf version
-
-      # 7. Login to Cloud Foundry
+      # 6. Login
       - name: CF Login
         run: |
           cf login -a "${{ secrets.CF_API_URL }}" \
@@ -46,13 +48,10 @@ jobs:
                    -o "${{ secrets.CF_ORG }}" \
                    -s "${{ secrets.CF_SPACE }}"
 
-      # 8. Deploy CAP Service
+      # 7. Deploy CAP Service
       - name: Deploy CAP Service
-        run: cf push cap01-service
+        run: cf push cap01-service -f gen/db/manifest.yml
 
-      # 9. Deploy Fiori App (if exists)
+      # 8. Deploy UI
       - name: Deploy UI
-        run: |
-          if [ -d "app" ]; then
-            cf push cap01-ui
-          fi
+        run: cf push cap01-ui -f gen/ui/manifest.yml
