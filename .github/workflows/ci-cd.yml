@@ -24,13 +24,20 @@ jobs:
       - name: Build CAP + Fiori
         run: npm run build
 
+      # ✅ FIXED STEP
       - name: Install Cloud Foundry CLI
         run: |
-          wget -qO- https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github | tar -xzf -
-          sudo mv cf /usr/local/bin/
+          sudo apt-get update
+          sudo apt-get install -y cloudfoundry-cli
+          cf version
 
       - name: CF Login
-        run: cf login -a ${{ secrets.CF_API_URL }} -u ${{ secrets.CF_USERNAME }} -p ${{ secrets.CF_PASSWORD }} -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
+        run: |
+          cf login -a "${{ secrets.CF_API_URL }}" \
+                   -u "${{ secrets.CF_USERNAME }}" \
+                   -p "${{ secrets.CF_PASSWORD }}" \
+                   -o "${{ secrets.CF_ORG }}" \
+                   -s "${{ secrets.CF_SPACE }}"
 
       - name: Deploy CAP + Fiori to Cloud Foundry
         run: |
