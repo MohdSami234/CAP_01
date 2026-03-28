@@ -10,39 +10,53 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ✅ Checkout
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # ✅ Node setup
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '22'
 
+      # ✅ Install dependencies
       - name: Install dependencies
         run: npm ci
 
+      # ✅ Build
       - name: Build CAP + Fiori
         run: npm run build
 
-      # ✅ FIXED CF CLI INSTALL (official + stable)
+      # ✅ Install CF CLI (FIXED - stable)
       - name: Install Cloud Foundry CLI
         run: |
           set -e
-          echo "Installing CF CLI..."
-          curl -fsSL https://packages.cloudfoundry.org/install.sh | sudo bash
+
+          echo "Downloading CF CLI v8..."
+          curl -L https://github.com/cloudfoundry/cli/releases/latest/download/cf8-linux-amd64.tgz -o cf.tgz
+
+          echo "Extracting..."
+          tar -xzf cf.tgz
+
+          echo "Setting permissions..."
+          chmod +x cf8
+
+          echo "Moving to PATH..."
+          sudo mv cf8 /usr/local/bin/cf
 
           echo "Verifying installation..."
           which cf
           cf version
 
-      # ✅ CF LOGIN (non-interactive)
+      # ✅ CF Login (non-interactive)
       - name: CF Login
         run: |
           cf api ${{ secrets.CF_API_URL }}
           cf auth ${{ secrets.CF_USERNAME }} ${{ secrets.CF_PASSWORD }}
           cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
 
-      # ✅ DEPLOY
+      # ✅ Deploy
       - name: Deploy CAP + Fiori
         run: |
           cf push cap01-service -f gen/db/manifest.yml
