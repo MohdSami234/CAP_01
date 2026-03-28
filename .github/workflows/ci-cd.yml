@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '22'
+          cache: 'npm'
 
       # ✅ Install dependencies
       - name: Install dependencies
@@ -28,14 +29,15 @@ jobs:
       - name: Build CAP + Fiori
         run: npm run build
 
-      # ✅ Install CF CLI (FINAL FIX)
+      # ✅ Install CF CLI (FIXED & STABLE)
       - name: Install Cloud Foundry CLI
         run: |
           set -e
 
           echo "Downloading CF CLI v8..."
+
           curl -L --retry 5 --retry-delay 5 \
-          https://github.com/cloudfoundry/cli/releases/download/v8.7.10/cf8-linux-amd64.tgz \
+          "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8" \
           -o cf.tgz
 
           echo "Check file size:"
@@ -43,6 +45,12 @@ jobs:
 
           echo "Validating file type:"
           file cf.tgz
+
+          if ! file cf.tgz | grep -q "gzip compressed"; then
+            echo "❌ Invalid download. Dumping file:"
+            cat cf.tgz
+            exit 1
+          fi
 
           echo "Extracting..."
           tar -xzf cf.tgz
