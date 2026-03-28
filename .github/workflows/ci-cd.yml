@@ -70,7 +70,7 @@ jobs:
         run: |
          set -e
 
-         cf api "${{ secrets.CF_API_URL }}"
+         cf api "${{ secrets.CF_API }}"
 
          cf login -u "${{ secrets.CF_USERNAME }}" \
              -p "${{ secrets.CF_PASSWORD }}" \
