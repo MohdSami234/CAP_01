@@ -3,37 +3,56 @@ name: CAP + Fiori CI/CD
 on:
   push:
     branches:
-      - master
+      - master   # ⚠️ change to master if your repo uses master
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      # 2. Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '22'
+          cache: 'npm'
 
+      # 3. Install dependencies
       - name: Install dependencies
         run: npm install
 
-      - name: Build CAP + Fiori
+      # 4. Build CAP + Fiori
+      - name: Build project
         run: npm run build
 
-      - name: Install Cloud Foundry CLI
-        run: |
-          curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github" | tar -zx
-          sudo mv cf /usr/local/bin/
-          cf version
+      # 5. Install Cloud Foundry CLI (BEST PRACTICE ✅)
+      - name: Setup CF CLI
+        uses: cloudfoundry/cf-cli-action@v2
 
+      # 6. Verify CF CLI
+      - name: CF version
+        run: cf version
+
+      # 7. Login to Cloud Foundry
       - name: CF Login
-        run: cf login -a ${{ secrets.CF_API_URL }} -u ${{ secrets.CF_USERNAME }} -p ${{ secrets.CF_PASSWORD }} -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
-
-      - name: Deploy CAP + Fiori
         run: |
-          cf push cap01-service -f gen/db/manifest.yml
-          cf push cap01-ui -f gen/ui/manifest.yml
+          cf login -a "${{ secrets.CF_API_URL }}" \
+                   -u "${{ secrets.CF_USERNAME }}" \
+                   -p "${{ secrets.CF_PASSWORD }}" \
+                   -o "${{ secrets.CF_ORG }}" \
+                   -s "${{ secrets.CF_SPACE }}"
+
+      # 8. Deploy CAP Service
+      - name: Deploy CAP Service
+        run: cf push cap01-service
+
+      # 9. Deploy Fiori App (if exists)
+      - name: Deploy UI
+        run: |
+          if [ -d "app" ]; then
+            cf push cap01-ui
+          fi
