@@ -3,45 +3,37 @@ name: CAP + Fiori CI/CD
 on:
   push:
     branches:
-      - master   # change to main if needed
+      - master   # or main
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Node setup
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '22'
           cache: 'npm'
 
-      # 3. Install deps
       - name: Install dependencies
         run: npm install
 
-      # 4. Build
       - name: Build CAP + Fiori
         run: npm run build
 
-      # 5. Install CF CLI (FIXED ✅)
-      - name: Install Cloud Foundry CLI
-        run: |   
-         curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github" -o cf.tgz
-         tar -xzf cf.tgz
-         CF_PATH=$(find . -name cf | head -n 1)
-         echo "CF found at: $CF_PATH"
-         chmod +x $CF_PATH
-         sudo mv $CF_PATH /usr/local/bin/cf
-         which cf
-         cf version
+      # ✅ FIXED (no more cf errors)
+      - name: Setup CF CLI
+        uses: cloudfoundry/cf-cli-action@v2
 
-      # 6. Login
+      - name: Verify CF CLI
+        run: |
+          which cf
+          cf version
+
       - name: CF Login
         run: |
           cf login -a "${{ secrets.CF_API_URL }}" \
@@ -50,10 +42,8 @@ jobs:
                    -o "${{ secrets.CF_ORG }}" \
                    -s "${{ secrets.CF_SPACE }}"
 
-      # 7. Deploy CAP Service
       - name: Deploy CAP Service
         run: cf push cap01-service -f gen/db/manifest.yml
 
-      # 8. Deploy UI
       - name: Deploy UI
         run: cf push cap01-ui -f gen/ui/manifest.yml
