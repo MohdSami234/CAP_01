@@ -1,0 +1,34 @@
+GET http://localhost:4004/odata/v4/catalog/Books
+
+#get by ID
+###
+GET http://localhost:4004/odata/v4/catalog/Books(963fbcc4-bb94-4e3d-8355-f97ab6d492be)
+
+###
+
+POST http://localhost:4004/odata/v4/catalog/Books
+Content-Type: application/json
+
+{
+    "title":"Oliver",
+    "author":"jinoy",
+    "price":1000.12,
+    "stock":13
+}
+
+
+### update a book
+
+PATCH http://localhost:4004/odata/v4/catalog/Books(963fbcc4-bb94-4e3d-8355-f97ab6d492be)
+Content-Type: application/json
+
+{
+    "title":"Oliver updated",
+    "author":"jinoy updated",
+    "price":1000.23,
+    "stock":15
+}
+
+### delete
+DELETE http://localhost:4004/odata/v4/catalog/Books(963fbcc4-bb94-4e3d-8355-f97ab6d492be)
+ 
