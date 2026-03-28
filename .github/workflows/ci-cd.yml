@@ -68,9 +68,15 @@ jobs:
       # ✅ CF Login
       - name: CF Login
         run: |
-         cf api "${{ secrets.CF_API_URL }}"
-         cf login -u "${{ secrets.CF_USERNAME }}" -p "${{ secrets.CF_PASSWORD }}" -o "${{ secrets.CF_ORG }}" -s "${{ secrets.CF_SPACE }}"
+         set -e
 
+         cf api "${{ secrets.CF_API_URL }}"
+
+         cf login -u "${{ secrets.CF_USERNAME }}" \
+             -p "${{ secrets.CF_PASSWORD }}" \
+             -o "${{ secrets.CF_ORG }}" \
+             -s "${{ secrets.CF_SPACE }}"
+         cf target
       # ✅ Deploy
       - name: Deploy CAP + Fiori
         run: |
