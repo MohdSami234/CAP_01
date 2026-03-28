@@ -19,23 +19,47 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build CAP + Fiori
         run: npm run build
 
+      # ✅ FIXED CF INSTALL (robust)
       - name: Install Cloud Foundry CLI
         run: |
+          set -e
+
+          echo "Downloading CF CLI..."
           curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github" -o cf.tgz
+
+          echo "Extracting..."
           tar -xzf cf.tgz
-          chmod +x cf
-          sudo mv cf /usr/local/bin/
+
+          echo "Finding cf binary..."
+          CF_PATH=$(find . -type f -name cf | head -n 1)
+
+          if [ -z "$CF_PATH" ]; then
+            echo "❌ CF binary not found!"
+            exit 1
+          fi
+
+          echo "CF found at: $CF_PATH"
+
+          chmod +x $CF_PATH
+          sudo mv $CF_PATH /usr/local/bin/cf
+
+          echo "Verifying installation..."
           which cf
           cf version
 
+      # ✅ LOGIN
       - name: CF Login
-        run: cf login -a ${{ secrets.CF_API_URL }} -u ${{ secrets.CF_USERNAME }} -p ${{ secrets.CF_PASSWORD }} -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
+        run: |
+          cf api ${{ secrets.CF_API_URL }}
+          cf auth ${{ secrets.CF_USERNAME }} ${{ secrets.CF_PASSWORD }}
+          cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
 
+      # ✅ DEPLOY
       - name: Deploy CAP + Fiori
         run: |
           cf push cap01-service -f gen/db/manifest.yml
