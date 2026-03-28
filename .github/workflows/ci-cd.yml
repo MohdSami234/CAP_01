@@ -80,5 +80,5 @@ jobs:
       # ✅ Deploy
       - name: Deploy CAP + Fiori
         run: |
-          cf push cap01-service -f gen/db/manifest.yml
-          cf push cap01-ui -f gen/ui/manifest.yml
+         cf push cap01-service -p gen/srv
+         # // cf push cap01-ui -f gen/ui/manifest.yml
