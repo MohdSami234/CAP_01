@@ -1,0 +1,7 @@
+---
+applications:
+- name: cap01-service
+  path: .
+  memory: 256M
+  buildpacks:
+    - nodejs_buildpack
