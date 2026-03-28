@@ -1,0 +1,38 @@
+name: CAP + Fiori CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build CAP + Fiori
+        run: npm run build
+
+      - name: Install Cloud Foundry CLI
+        run: |
+          wget -qO- https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github | tar -xzf -
+          sudo mv cf /usr/local/bin/
+
+      - name: CF Login
+        run: cf login -a ${{ secrets.CF_API_URL }} -u ${{ secrets.CF_USERNAME }} -p ${{ secrets.CF_PASSWORD }} -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
+
+      - name: Deploy CAP + Fiori to Cloud Foundry
+        run: |
+          cf push cap01-service -f gen/db/manifest.yml
+          cf push cap01-ui -f gen/ui/manifest.yml
