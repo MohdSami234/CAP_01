@@ -1,7 +1,19 @@
 {
-  "xsappname": "CAP_01",
+  "xsappname": "cap-sales-app",
   "tenant-mode": "dedicated",
-  "description": "Security profile of called application",
-  "scopes": [],
-  "role-templates": []
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Display",
+      "description": "Display data"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "Viewer",
+      "description": "Can view data",
+      "scope-references": [
+        "$XSAPPNAME.Display"
+      ]
+    }
+  ]
 }

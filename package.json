@@ -36,11 +36,6 @@
       },
       "auth": "mocked"
     }
-  },
-  "workspaces": [
-    "app/*"
-  ],
-  "sapux": [
-    "app/bookshop"
-  ]
+  }
+   
 }
