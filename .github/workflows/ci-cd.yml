@@ -3,55 +3,82 @@ name: CAP + Fiori CI/CD
 on:
   push:
     branches:
-      - master   # change to main if needed
+      - master
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout
+      # ✅ Checkout
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Node setup
+      # ✅ Node setup
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '22'
           cache: 'npm'
 
-      # 3. Install deps
+      # ✅ Install dependencies
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      # 4. Build
+      # ✅ Build
       - name: Build CAP + Fiori
         run: npm run build
 
-      # 5. Install CF CLI (FIXED ✅)
+      # ✅ Install CF CLI (FIXED & STABLE)
       - name: Install Cloud Foundry CLI
         run: |
-          curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github" -o cf.tgz
+          set -e
+
+          echo "Downloading CF CLI v8..."
+
+          curl -L --retry 5 --retry-delay 5 \
+          "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8" \
+          -o cf.tgz
+
+          echo "Check file size:"
+          ls -lh cf.tgz
+
+          echo "Validating file type:"
+          file cf.tgz
+
+          if ! file cf.tgz | grep -q "gzip compressed"; then
+            echo "❌ Invalid download. Dumping file:"
+            cat cf.tgz
+            exit 1
+          fi
+
+          echo "Extracting..."
           tar -xzf cf.tgz
-          chmod +x cf
-          sudo mv cf /usr/local/bin/cf
+
+          echo "Setting permissions..."
+          chmod +x cf8
+
+          echo "Moving to PATH..."
+          sudo mv cf8 /usr/local/bin/cf
+
+          echo "Verifying installation..."
           which cf
           cf version
 
-      # 6. Login
+      # ✅ CF Login
       - name: CF Login
         run: |
-          cf login -a "${{ secrets.CF_API_URL }}" \
-                   -u "${{ secrets.CF_USERNAME }}" \
-                   -p "${{ secrets.CF_PASSWORD }}" \
-                   -o "${{ secrets.CF_ORG }}" \
-                   -s "${{ secrets.CF_SPACE }}"
+         set -e
 
-      # 7. Deploy CAP Service
-      - name: Deploy CAP Service
-        run: cf push cap01-service -f gen/db/manifest.yml
+         cf api "${{ secrets.CF_API }}"
 
-      # 8. Deploy UI
-      - name: Deploy UI
-        run: cf push cap01-ui -f gen/ui/manifest.yml
+         cf login -u "${{ secrets.CF_USERNAME }}" \
+             -p "${{ secrets.CF_PASSWORD }}" \
+             -o "${{ secrets.CF_ORG }}" \
+             -s "${{ secrets.CF_SPACE }}"
+         cf target
+      # ✅ Deploy
+      - name: Deploy CAP + Fiori
+        run: |
+         cf push cap01-service -p gen/srv
+         # // cf push cap01-ui -f gen/ui/manifest.yml
